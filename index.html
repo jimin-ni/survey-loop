@@ -136,12 +136,20 @@ function initState(){
 function seg(){return TYPES[S.type]}
 
 /* ---------- 응답 생성·정규화·분류 ---------- */
+/* 응답 문구가 방문 시점을 직접 언급하면 세그먼트를 문구와 일치시킨다(합성 데이터 정합성) */
+function segFor(T,txt,fallback){
+  if(T.segs[0]==='평일 방문'){
+    if(txt.indexOf('주말')>-1)return '주말 방문';
+    if(txt.indexOf('평일')>-1||txt.indexOf('주중')>-1)return '평일 방문';
+  }
+  return fallback;
+}
 function rawData(type){
   var T=TYPES[type],r=rng(type.length*977+T.pool.length*31),items=[];
   T.pool.forEach(function(p){for(var i=0;i<p[1];i++)items.push(p[0])});
   // 셔플
   for(var i=items.length-1;i>0;i--){var j=Math.floor(r()*(i+1));var tmp=items[i];items[i]=items[j];items[j]=tmp}
-  var rows=items.map(function(txt,i){return{raw_id:'R'+String(i+1).padStart(3,'0'),channel:T.channels[Math.floor(r()*T.channels.length)],segment:T.segs[Math.floor(r()*T.segs.length)],text:txt}});
+  var rows=items.map(function(txt,i){return{raw_id:'R'+String(i+1).padStart(3,'0'),channel:T.channels[Math.floor(r()*T.channels.length)],segment:segFor(T,txt,T.segs[Math.floor(r()*T.segs.length)]),text:txt}});
   // 오염 데이터: 중복 2건, 무성의 2건
   rows.push({raw_id:'R'+String(rows.length+1).padStart(3,'0'),channel:rows[0].channel,segment:rows[0].segment,text:rows[0].text});
   rows.push({raw_id:'R'+String(rows.length+1).padStart(3,'0'),channel:rows[3].channel,segment:rows[3].segment,text:rows[3].text});
